@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini-RAFT Drawing Board</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Mini-RAFT Board</h1>
+          <p>Distributed real-time drawing with failover</p>
+        </div>
+        <div class="status-wrap">
+          <span id="statusDot" class="dot connecting"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </header>
+
+      <section class="board-wrap">
+        <canvas id="board"></canvas>
+      </section>
+
+      <footer class="toolbar">
+        <label>
+          Color
+          <input id="color" type="color" value="#0b6e4f" />
+        </label>
+        <label>
+          Width
+          <input id="width" type="range" min="1" max="14" value="3" />
+        </label>
+        <button id="clearLocal" type="button">Clear Local View</button>
+      </footer>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

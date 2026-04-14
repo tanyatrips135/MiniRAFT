@@ -1,0 +1,13 @@
+{
+  "name": "mini-raft-tests",
+  "version": "1.0.0",
+  "main": "smoke.js",
+  "scripts": {
+    "smoke": "node smoke.js",
+    "failover": "node failover.js",
+    "restart-sync": "node restart-sync.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

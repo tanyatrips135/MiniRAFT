@@ -1,0 +1,124 @@
+:root {
+  --bg-1: #f3efe6;
+  --bg-2: #dbe7d8;
+  --ink: #1d2a22;
+  --accent: #0b6e4f;
+  --paper: #fffdf7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 20% 10%, var(--bg-2), var(--bg-1));
+}
+
+.app-shell {
+  width: min(1100px, 96vw);
+  margin: 0 auto;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.topbar,
+.toolbar {
+  background: rgba(255, 253, 247, 0.92);
+  border: 1px solid rgba(11, 110, 79, 0.2);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.topbar p {
+  margin: 3px 0 0;
+  font-size: 0.9rem;
+}
+
+.status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.dot.connecting {
+  background: #f7a400;
+}
+
+.dot.connected {
+  background: #10a951;
+}
+
+.dot.disconnected {
+  background: #d63232;
+}
+
+.board-wrap {
+  background: var(--paper);
+  border: 2px solid rgba(11, 110, 79, 0.25);
+  border-radius: 16px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+#board {
+  width: 100%;
+  height: 72vh;
+  display: block;
+  border-radius: 10px;
+  touch-action: none;
+  background-image: linear-gradient(to right, rgba(11, 110, 79, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 110, 79, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.toolbar {
+  gap: 14px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+button {
+  border: none;
+  background: var(--accent);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  #board {
+    height: 62vh;
+  }
+}
