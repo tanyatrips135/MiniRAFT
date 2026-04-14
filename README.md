@@ -111,7 +111,7 @@ npm run restart-sync
 
 - smoke: multi-client consistency and commit-order convergence
 - failover: automatically kills active leader container, validates continued commits, then restarts killed replica
-- restart-sync: verifies commit-index convergence after follower restart and catch-up
+- restart-sync: automatically kills one follower, sends writes during downtime, restarts it, then verifies catch-up convergence
 
 ## Manual verification checklist
 
