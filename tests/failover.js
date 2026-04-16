@@ -13,8 +13,16 @@ async function getJson(url) {
   return res.json();
 }
 
+async function getJsonSafe(url) {
+  try {
+    return await getJson(url);
+  } catch {
+    return null;
+  }
+}
+
 async function findLeaderPort() {
-  const ports = [9001, 9002, 9003];
+  const ports = [9001, 9002, 9003, 9004];
   for (const port of ports) {
     try {
       const data = await getJson(`http://localhost:${port}/status`);
@@ -28,6 +36,7 @@ function portToReplica(port) {
   if (port === 9001) return "replica1";
   if (port === 9002) return "replica2";
   if (port === 9003) return "replica3";
+  if (port === 9004) return "replica4";
   return null;
 }
 
@@ -42,6 +51,21 @@ async function waitForLeaderExcluding(excludedPort, timeoutMs = 8000) {
     if (leaderPort && leaderPort !== excludedPort) {
       return leaderPort;
     }
+    await delay(200);
+  }
+  return null;
+}
+
+async function waitForGatewayLeaderExcluding(excludedReplica, timeoutMs = 10000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const health = await getJsonSafe("http://localhost:8080/health");
+    const leaderUrl = health?.leaderUrl || null;
+
+    if (leaderUrl && !leaderUrl.includes(excludedReplica)) {
+      return leaderUrl;
+    }
+
     await delay(200);
   }
   return null;
@@ -68,9 +92,38 @@ async function sendStrokeBurst(ws, count, prefix, pauseMs) {
   }
 }
 
+async function waitForAdditionalCommits(commits, baselineCount, timeoutMs = 12000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (commits.length > baselineCount) {
+      return true;
+    }
+    await delay(200);
+  }
+  return false;
+}
+
+async function sendUntilAdditionalCommits(ws, commits, baselineCount, timeoutMs = 15000) {
+  const start = Date.now();
+  let rounds = 0;
+
+  while (Date.now() - start < timeoutMs) {
+    rounds += 1;
+    await sendStrokeBurst(ws, 3, `after-fail-r${rounds}`, 140);
+
+    const gotNewCommit = await waitForAdditionalCommits(commits, baselineCount, 1400);
+    if (gotNewCommit) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 async function run() {
   const ws = new WebSocket("ws://localhost:8080");
   const commits = [];
+  let backpressureCount = 0;
   let closed = false;
   let killedReplica = null;
 
@@ -88,6 +141,8 @@ async function run() {
       const msg = JSON.parse(String(raw));
       if (msg.type === "committed-stroke") {
         commits.push(msg.entry.entryId);
+      } else if (msg.type === "gateway-backpressure") {
+        backpressureCount += 1;
       }
     } catch {}
   });
@@ -113,16 +168,25 @@ async function run() {
   }
   console.log(`New leader elected on port ${newLeaderPort}`);
 
-  await sendStrokeBurst(ws, 10, "after-fail", 120);
+  const gatewayLeaderUrl = await waitForGatewayLeaderExcluding(killedReplica, 10000);
+  if (!gatewayLeaderUrl) {
+    throw new Error("Gateway did not discover a new leader in time");
+  }
+  console.log(`Gateway now points to leader ${gatewayLeaderUrl}`);
 
-  await delay(3500);
+  // Let gateway/cluster routing settle briefly before post-fail writes.
+  await delay(600);
+
+  const observedPostFailCommit = await sendUntilAdditionalCommits(ws, commits, commitsBeforeKill, 15000);
 
   if (closed) {
     throw new Error("Client disconnected during failover window");
   }
 
-  if (commits.length <= commitsBeforeKill) {
-    throw new Error("No additional commits observed after leader kill");
+  if (!observedPostFailCommit) {
+    throw new Error(
+      `No additional commits observed after leader kill (backpressureCount=${backpressureCount})`
+    );
   }
 
   const unique = new Set(commits);
@@ -132,6 +196,7 @@ async function run() {
 
   console.log(`Restarting killed replica ${killedReplica}`);
   runDockerCommand(`docker compose start ${killedReplica}`);
+  console.log(`Replica restarted: ${killedReplica}`);
   lastKilledReplica = null;
   await delay(1500);
 

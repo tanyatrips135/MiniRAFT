@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json({ limit: "1mb" }));
 
 const PORT = Number(process.env.PORT || 8080);
-const REPLICA_URLS = (process.env.REPLICA_URLS || "http://replica1:9001,http://replica2:9002,http://replica3:9003")
+const REPLICA_URLS = (process.env.REPLICA_URLS || "http://replica1:9001,http://replica2:9002,http://replica3:9003,http://replica4:9004")
   .split(",")
   .map((url) => url.trim())
   .filter(Boolean);

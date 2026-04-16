@@ -1,17 +1,17 @@
 # Distributed Real-Time Drawing Board with Mini-RAFT
 
-A fault-tolerant real-time collaborative drawing system built with a WebSocket gateway, a 3-node Mini-RAFT cluster, and a browser canvas frontend.
+A fault-tolerant real-time collaborative drawing system built with a WebSocket gateway, a 4-node Mini-RAFT cluster, and a browser canvas frontend.
 
 ## What this project implements
 
 - Real-time drawing synchronization across multiple clients
-- 3-replica Mini-RAFT cluster with roles:
+- 4-replica Mini-RAFT cluster with roles:
   - Follower
   - Candidate
   - Leader
 - Leader election with randomized timeout (500-800 ms)
 - Heartbeats every 150 ms
-- Log replication with majority commit (2 of 3)
+- Log replication with majority commit (3 of 4)
 - Leader failover without disconnecting connected WebSocket clients
 - Follower catch-up via sync-log flow after restart
 - Dockerized multi-service setup with bind mounts for hot reload
@@ -23,6 +23,7 @@ A fault-tolerant real-time collaborative drawing system built with a WebSocket g
 - replica1/
 - replica2/
 - replica3/
+- replica4/
 - frontend/
 - tests/
 - docs/
@@ -88,6 +89,7 @@ docker compose up --build
 curl http://localhost:9001/status
 curl http://localhost:9002/status
 curl http://localhost:9003/status
+curl http://localhost:9004/status
 ```
 
 ## Automated tests

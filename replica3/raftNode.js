@@ -419,7 +419,7 @@ class RaftNode {
           }
 
           const followerIndex = Number(result.data?.currentIndex ?? -1);
-          const fromIndex = Math.max(followerIndex + 1, 0);
+          const fromIndex = Math.max(0, Math.min(followerIndex, this.log.length));
           const syncResult = await postJson(
             `${peer.url}/sync-log`,
             {

@@ -4,7 +4,8 @@ const { execSync } = require("child_process");
 const REPLICA_PORTS = {
   replica1: 9001,
   replica2: 9002,
-  replica3: 9003
+  replica3: 9003,
+  replica4: 9004
 };
 
 const COMPOSE_FILE = process.env.COMPOSE_FILE || "../docker-compose.yml";
@@ -105,7 +106,7 @@ async function sendWritesThroughGateway(count, prefix) {
 async function run() {
   const initial = await getClusterStatuses();
   if (initial.some((s) => s === null)) {
-    throw new Error("All three replicas must be healthy before running restart-sync");
+    throw new Error("All replicas must be healthy before running restart-sync");
   }
 
   const leader = initial.find((s) => s.role === "Leader");

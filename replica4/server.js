@@ -4,8 +4,8 @@ const { RaftNode } = require("./raftNode");
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-const nodeId = process.env.REPLICA_ID || "replica1";
-const port = Number(process.env.PORT || 9001);
+const nodeId = process.env.REPLICA_ID || "replica4";
+const port = Number(process.env.PORT || 9004);
 const selfUrl = process.env.SELF_URL || `http://${nodeId}:${port}`;
 const gatewayUrl = process.env.GATEWAY_URL || "http://gateway:8080";
 const electionMinMs = Number(process.env.ELECTION_MIN_MS || 500);

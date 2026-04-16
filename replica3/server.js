@@ -83,10 +83,11 @@ app.post("/client-entry", async (req, res) => {
 });
 
 const server = app.listen(port, () => {
-  console.log(`[${nodeId}] listening on ${port}`);
+  console.log(`[${nodeId}] replica-started on ${port}`);
 });
 
 function shutdown() {
+  console.log(`[${nodeId}] replica-stopped on ${port}`);
   raft.stop();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 2500).unref();
