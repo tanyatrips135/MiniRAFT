@@ -20,6 +20,7 @@ let isShuttingDown = false;
 
 const clients = new Set();
 const committedCache = new Set();
+const committedEntries = [];
 
 function sendJson(ws, payload) {
   if (ws.readyState === WebSocket.OPEN) {
@@ -150,6 +151,10 @@ app.post("/committed", (req, res) => {
 
   if (!committedCache.has(entry.entryId)) {
     committedCache.add(entry.entryId);
+    committedEntries.push(entry);
+    if (committedEntries.length > 5000) {
+      committedEntries.shift();
+    }
     if (committedCache.size > 5000) {
       const first = committedCache.values().next().value;
       committedCache.delete(first);
@@ -170,6 +175,10 @@ wss.on("connection", (ws) => {
     type: "gateway-status",
     leaderUrl: activeLeaderUrl,
     leaderId: activeLeaderId
+  });
+  sendJson(ws, {
+    type: "board-state",
+    entries: committedEntries
   });
 
   ws.on("message", async (raw) => {

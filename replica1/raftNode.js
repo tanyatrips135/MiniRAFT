@@ -26,8 +26,14 @@ class RaftNode {
   }
 
   logEvent(event, details = {}) {
-    void details;
-    console.log(`${event} role=${this.role}`);
+    const payload = {
+      event,
+      role: this.role,
+      nodeId: this.nodeId,
+      term: this.currentTerm,
+      ...details
+    };
+    console.log(JSON.stringify(payload));
   }
 
   transitionRole(nextRole, reason, details = {}) {
@@ -309,6 +315,7 @@ class RaftNode {
     const term = Number(body.term || 0);
     const leaderId = body.leaderId || null;
     const leaderUrl = body.leaderUrl || null;
+    const leaderCommit = Number(body.leaderCommit ?? -1);
 
     if (term < this.currentTerm) {
       return {
@@ -323,6 +330,21 @@ class RaftNode {
       source: "heartbeat",
       suppressTimerLog: true
     });
+
+    if (leaderCommit > this.commitIndex) {
+      const previousCommit = this.commitIndex;
+      this.commitIndex = Math.min(leaderCommit, this.log.length - 1);
+      for (let i = 0; i <= this.commitIndex; i += 1) {
+        if (this.log[i]) this.log[i].committed = true;
+      }
+      this.lastApplied = this.commitIndex;
+      this.logEvent("commit-index-advanced", {
+        source: "heartbeat",
+        from: previousCommit,
+        to: this.commitIndex
+      });
+    }
+
     return {
       success: true,
       term: this.currentTerm,
@@ -534,7 +556,8 @@ class RaftNode {
         {
           term: this.currentTerm,
           leaderId: this.nodeId,
-          leaderUrl: this.selfUrl
+          leaderUrl: this.selfUrl,
+          leaderCommit: this.commitIndex
         },
         420
       ).then((result) => ({ peer, result }));
@@ -692,6 +715,7 @@ class RaftNode {
         ackCount,
         required: this.majority()
       });
+      await this.sendHeartbeats();
       await this.sendCommittedEntryToGateway(this.log[index]);
       return { success: true, committed: true, entry: this.log[index] };
     }

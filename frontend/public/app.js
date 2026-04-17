@@ -6,6 +6,7 @@ const widthPicker = document.getElementById("width");
 const clearBtn = document.getElementById("clearLocal");
 
 const ctx = canvas.getContext("2d");
+const committedStrokes = [];
 const renderedEntries = new Set();
 const clientId = `client-${Math.random().toString(16).slice(2)}`;
 
@@ -21,6 +22,7 @@ function resizeCanvas() {
   ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  redrawCommittedBoard();
 }
 
 function setStatus(state, text) {
@@ -55,12 +57,29 @@ function connect() {
       return;
     }
 
+    if (msg.type === "board-state" && Array.isArray(msg.entries)) {
+      committedStrokes.length = 0;
+      renderedEntries.clear();
+      for (const entry of msg.entries) {
+        if (!entry || !entry.entryId || !entry.stroke) continue;
+        if (renderedEntries.has(entry.entryId)) continue;
+        renderedEntries.add(entry.entryId);
+        committedStrokes.push(entry.stroke);
+      }
+      redrawCommittedBoard();
+    }
+
     if (msg.type === "committed-stroke" && msg.entry) {
       const { entryId, stroke } = msg.entry;
       if (!renderedEntries.has(entryId)) {
         renderedEntries.add(entryId);
+        committedStrokes.push(stroke);
         drawStroke(stroke);
       }
+    }
+
+    if (msg.type === "gateway-backpressure") {
+      redrawCommittedBoard();
     }
   });
 }
@@ -87,6 +106,13 @@ function drawStroke(stroke) {
   }
 
   ctx.stroke();
+}
+
+function redrawCommittedBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const stroke of committedStrokes) {
+    drawStroke(stroke);
+  }
 }
 
 function startDrawing(event) {
@@ -124,7 +150,6 @@ function finishDrawing() {
   }
 
   const entryId = `entry-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  renderedEntries.add(entryId);
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
@@ -136,6 +161,8 @@ function finishDrawing() {
       })
     );
   }
+
+  redrawCommittedBoard();
 
   currentStroke = null;
 }
@@ -150,8 +177,9 @@ canvas.addEventListener("pointercancel", finishDrawing);
 canvas.addEventListener("pointerleave", finishDrawing);
 
 clearBtn.addEventListener("click", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  committedStrokes.length = 0;
   renderedEntries.clear();
+  redrawCommittedBoard();
 });
 
 window.addEventListener("resize", resizeCanvas);
